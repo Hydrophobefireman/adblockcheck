@@ -1,15 +1,38 @@
+class _crayons:
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+
+    def __init__(self, text, _color=""):
+        color = self.__getattribute__(_color.upper())
+        self.data = color + text + self.ENDC
+
+    def __repr__(self):
+        return self.data
+
+
+def crayons(text, color):
+    return str(_crayons(text, color))
+
+
 try:
     import requests
 
     USE_REQUESTS = True
 except:
-    import httplib2
-
+    print(crayons("[error]requests not installed", "FAIL"))
+    print("Install latest version of requests by using")
+    print(crayons("pip install requests", "BOLD"))
+    quit()
     USE_REQUESTS = False
 import re
 import os
 import threading
-import itertools
 import time
 
 headers = {
@@ -48,30 +71,18 @@ HOSTS = [
 ]
 ALT_HOST_SOURCES = []
 
-
-def debug(s):
-    print("[debug]%s" % (s))
-    return
-
-
-def info(s):
-    print("[info]%s" % s)
-    return
-
-
 if not os.path.isdir(CACHE_DIR):
-    info("No Cache Directory found")
+    print(crayons("No Cache Directory found", "warning"))
     os.mkdir(CACHE_DIR)
 
 
 def fetch_(_url) -> None:
     url = _url.strip()
-    time.sleep(0.2)
     res = compat_request(url).fetch()
     if res:
-        print("[Warning]Ad Blocker Failed for:%s" % url)
+        print(crayons("[Failed]", "FAIL") + url)
     else:
-        print("Ad Blocked:", url)
+        print(crayons("[Blocked]", "OKGREEN") + url)
 
 
 def fire_requests():
@@ -82,9 +93,9 @@ def fire_requests():
 
 
 def check_cached_hosts():
-    debug("Checking for cached host files in %s" % CACHE_DIR)
+    print(crayons("Checking for cached host files in %s" % CACHE_DIR, "BOLD"))
     if not os.path.isfile(HOSTS_FILE) or os.path.getsize(HOSTS_FILE) <= 10000:
-        info("No .hosts file found..fetching files")
+        print(crayons("No .hosts file found..fetching files", "warning"))
         data = []
         for host in HOSTS:
             print(host)
@@ -115,7 +126,7 @@ def domains_only(_host: str) -> list:
 
 def compat_request(url, method="head"):
     if not USE_REQUESTS:
-        http = httplib2.Http()
+        http = _request.Request(url, headers=headers, method=method)
     else:
         http = getattr(requests, method)
     return generate_request(http, USE_REQUESTS, url, headers, method)
@@ -128,8 +139,8 @@ class generate_request:
                 r = func(url, headers=headers)
                 self.data = {"headers": r.headers, "body": r.text}
             else:
-                r = func(url, headers=headers, method=method)
-                self.data = {"headers": r[0], "body": r[1].decode()}
+                r = _request.urlopen(func)
+                self.data = {"headers": dict(r.info()), "body": r.read().decode()}
         except Exception as e:
             self.data = None
 

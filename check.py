@@ -1,3 +1,4 @@
+
 class _crayons:
     HEADER = "\033[95m"
     OKBLUE = "\033[94m"
@@ -22,18 +23,17 @@ def crayons(text, color):
 
 try:
     import requests
-
     USE_REQUESTS = True
 except:
     print(crayons("[error]requests not installed", "FAIL"))
     print("Install latest version of requests by using")
     print(crayons("pip install requests", "BOLD"))
-    quit()
+ #   quit()
+    import urllib.request as _request
     USE_REQUESTS = False
 import re
 import os
-import threading
-import time
+import time,asyncio
 
 headers = {
     "Accept-Encoding": "gzip,deflate",
@@ -85,13 +85,21 @@ def fetch_(_url) -> None:
         print(crayons("[Blocked]", "OKGREEN") + url)
 
 
-def fire_requests():
+
+async def fire_requests():
     with open(HOSTS_FILE, "r") as f:
+        loop=asyncio.get_event_loop()
         for line in f:
-            threads = threading.Thread(target=fetch_, args=(line,))
-            threads.start()
-
-
+            loop.run_in_executor(None,fetch_,line)
+        loop.close()
+            #threads = threading.Thread(target=fetch_, args=(line,))
+            #$threads.start()
+"""def fire_requests():
+  with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+    with open(HOSTS_FILE,"r") as f:
+      for url in f:
+        executor.submit(fetch_, url)
+"""
 def check_cached_hosts():
     print(crayons("Checking for cached host files in %s" % CACHE_DIR, "BOLD"))
     if not os.path.isfile(HOSTS_FILE) or os.path.getsize(HOSTS_FILE) <= 10000:
@@ -148,6 +156,11 @@ class generate_request:
         return self.data
 
 
+
 if __name__ == "__main__":
-    check_cached_hosts()
-    fire_requests()
+#    x=input("Enter 1 for adblock test and 2 for creaty a hosts file")
+    if "1"=="1":
+      check_cached_hosts()
+      loop=asyncio.new_event_loop()
+      loop.run_until_complete(fire_requests())
+ #   fire_requests()
